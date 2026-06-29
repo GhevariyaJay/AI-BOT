@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Models {
+  id                     String          @id @default(uuid())
+  name                   String      @unique
+  lighterApiKey          String
+  invocationCount        Int             @default(0)
+  invocations            Invocations[]
+  portfolioSizes         PortfolioSize[]
+  accountIndex           String
+  @@index([name])
+}
+
+model Invocations {
+  id            String        @id @default(uuid())
+  modelId       String
+  response      String
+  model         Models        @relation(fields: [modelId], references: [id])
+  toolCall      ToolCalls[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([modelId])
+}
+
+model ToolCalls {
+  id               String          @id @default(uuid())
+  invocationId     String
+  toolCallType     ToolCallType
+  metadata         String
+  invocations      Invocations     @relation(fields: [invocationId], references: [id])
+  portfolioSizeId  String?
+  portfolioSize    PortfolioSize?  @relation(fields: [portfolioSizeId], references: [id])
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@index([invocationId])
+  @@index([portfolioSizeId])
+}
+
+model PortfolioSize {
+  id            String       @id @default(uuid())
+  modelId       String
+  netPortfolio  String
+  model         Models       @relation(fields: [modelId], references: [id])
+  toolCalls     ToolCalls[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([modelId])
+}
+
+enum ToolCallType {
+  CREATE_POSITION
+  CLOSE_POSITION
+}
